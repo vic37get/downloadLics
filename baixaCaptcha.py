@@ -1,4 +1,5 @@
 import urllib.request
+URL = "http://www.comprasnet.gov.br/scripts/srf/intercepta/captcha.aspx?opt=image"
 
 def downloadImgCaptcha(URL, quantidade):
     for i in range(quantidade):
@@ -10,6 +11,5 @@ def downloadImgCaptcha(URL, quantidade):
     return
 
 
-URL = "http://www.comprasnet.gov.br/scripts/srf/intercepta/captcha.aspx?opt=image"
-quantidade = 10
+quantidade = 30
 downloadImgCaptcha(URL, quantidade)
