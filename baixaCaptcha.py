@@ -11,5 +11,5 @@ def downloadImgCaptcha(URL, quantidade):
     return
 
 
-quantidade = 30
+quantidade = 5
 downloadImgCaptcha(URL, quantidade)
