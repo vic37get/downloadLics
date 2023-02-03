@@ -9,20 +9,28 @@ def pegaPagina(URL):
     pagina = requests.get(URL)
     return pagina
 
-def pegaConteudoHtml(paginaHtml):
+def pegaConteudoHtml(paginaHtml, nomeTag):
+    codigos = []
     counteudoHtml = BeautifulSoup(paginaHtml.text, 'html.parser')
-    tabela = counteudoHtml.find(id='form1')
-    conteudos = tabela.findAll('tr')
-    print(conteudos)
+    form = counteudoHtml.find(id=nomeTag)
+    table = form.find('table')
+    tr = table.findAll('tr')
+    for i in tr:
+        item = i.find('td')
+        codigos.append(item)
+    return codigos
 
 def removeTagHtml(conteudo):
-    tagHtml = ("<[^>]*>", "")
-    conteudoLimpo = re.sub(tagHtml, '', conteudo)
+    tagHtml = re.compile("<[^>]*>")
+    conteudoLimpo = re.sub(tagHtml, '', str(conteudo))
+    #print(conteudoLimpo[1])
     return conteudoLimpo
 
+def escreveCsv(dados):
+    with open('Uags.csv', 'w') as f:
+        f.write(dados)
 
 pagina = pegaPagina(URL_UAGS)
-pegaConteudoHtml(pagina)
-
-
-
+conteudoHtml = pegaConteudoHtml(pagina, 'form1')
+dados = removeTagHtml(conteudoHtml)
+escreveCsv(dados)
