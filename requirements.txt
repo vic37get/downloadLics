@@ -1,2 +1,4 @@
 opencv-python
 matplotlib
+selenium
+webdriver-manager
