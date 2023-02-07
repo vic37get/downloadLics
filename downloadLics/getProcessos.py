@@ -45,11 +45,21 @@ def main():
     URL = "http://comprasnet.gov.br/livre/Pregao/ata0.asp"
     todosUags = getUags('Uags.csv')
     df = pd.DataFrame(columns=['UAG', 'codLicitacao'])
+    uagsErros = []
     for codUag in todosUags:
-        codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))
-        uags = [codUag]*len(codigosLicitacao)
-        df = df.append({"UAG": uags, "codLicitacao": codigosLicitacao}, ignore_index=True)
-        break
-    print(df)
+        print('UAG ATUAL: ', codUag)
+        codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))[0]
+        for licitacao in codigosLicitacao:
+            print('UAG: ', codUag,'LICITACAO: ', licitacao)
+            try:
+                df = df.append({"UAG": codUag, "codLicitacao": licitacao}, ignore_index=True)
+            except:
+                uagsErros.append([codUag, licitacao])
+                print('ERRO!')
+    with open('uagsComErro.txt', 'w') as f:
+        for erro in uagsErros:
+            f.write(erro)
+    f.close()
+    df.to_csv('processosComprasNet.csv', index=False, encoding='utf-8')
 main()
     
