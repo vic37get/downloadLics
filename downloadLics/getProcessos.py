@@ -5,7 +5,15 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import pandas as pd
 import re
+from tqdm import tqdm
 
+class Registro:
+    def __init__(self, noLicitacao, codUasg, nomeUasg, data):
+        self.noLicitacao = noLicitacao
+        self.codUasg = codUasg
+        self.nomeUasg = nomeUasg
+        self.data = data
+        
 def getUags(filename):
     uags = pd.read_csv(filename, encoding='utf-8')
     listaUags = []
@@ -13,14 +21,17 @@ def getUags(filename):
         listaUags.append(item[0])
     return listaUags
 
-def removeTagHtml(conteudo):
+def removeTagHtml(listaConteudo):
     tagHtml = re.compile("<[^>]*>")
-    conteudoLimpo = re.sub(tagHtml, '', str(conteudo))
-    return conteudoLimpo
+    for item in range(len(listaConteudo)):
+        listaConteudo[item] = re.sub(tagHtml, '', str(listaConteudo[item]))
+        listaConteudo[item] = listaConteudo[item].strip().replace('\n (Pregão)', '')
+    return listaConteudo
 
 def getProcessos(URL, codUag):
     options = Options()
-    #options.headless = False
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
     driver.get(URL)
     campoUasg = driver.find_element('name', 'co_uasg')
@@ -36,26 +47,26 @@ def pegaConteudoHtml(paginaHtml):
     counteudoHtml = BeautifulSoup(paginaHtml, 'html.parser')
     allTr = counteudoHtml.find_all("tr", {"class": "tex3"})
     for ind, tr in enumerate(allTr):
-        noLicitacao = tr.find_all("a")
-        noLicitacao = removeTagHtml(noLicitacao[0]).strip()
-        codigosLicitacao.append(noLicitacao)
-    return codigosLicitacao, 
+        itensLicitacao = tr.find_all("td")
+        itensLicitacao = removeTagHtml(itensLicitacao)
+        codigosLicitacao.append(Registro(itensLicitacao[0], itensLicitacao[1], itensLicitacao[2], itensLicitacao[3]))
+    return codigosLicitacao
 
 def main():
     URL = "http://comprasnet.gov.br/livre/Pregao/ata0.asp"
     todosUags = getUags('Uags.csv')
-    df = pd.DataFrame(columns=['UAG', 'codLicitacao'])
+    
+    df = pd.DataFrame(columns=['noLicitacao', 'codUasg', 'nomeUasg', 'data'])
     uagsErros = []
+    barraProgresso = tqdm(total=len(todosUags))
     for codUag in todosUags:
-        print('UAG ATUAL: ', codUag)
-        codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))[0]
+        codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))
         for licitacao in codigosLicitacao:
-            print('UAG: ', codUag,'LICITACAO: ', licitacao)
             try:
-                df = df.append({"UAG": codUag, "codLicitacao": licitacao}, ignore_index=True)
+                df = df.append({'noLicitacao': licitacao.noLicitacao, 'codUasg': licitacao.codUasg, 'nomeUasg': licitacao.nomeUasg, 'data': licitacao.data}, ignore_index=True)
             except:
-                uagsErros.append([codUag, licitacao])
-                print('ERRO!')
+                uagsErros.append([codUag, licitacao.noLicitacao])
+        barraProgresso.update()
     with open('uagsComErro.txt', 'w') as f:
         for erro in uagsErros:
             f.write(erro)
