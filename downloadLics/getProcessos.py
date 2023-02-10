@@ -60,12 +60,12 @@ def main():
     uagsErros = []
     barraProgresso = tqdm(total=len(todosUags))
     for codUag in todosUags:
-        codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))
-        for licitacao in codigosLicitacao:
-            try:
+        try:
+            codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))
+            for licitacao in codigosLicitacao:
                 df = df.append({'noLicitacao': licitacao.noLicitacao, 'codUasg': licitacao.codUasg, 'nomeUasg': licitacao.nomeUasg, 'data': licitacao.data}, ignore_index=True)
-            except:
-                uagsErros.append([codUag, licitacao.noLicitacao])
+        except:
+            uagsErros.append([codUag, licitacao.noLicitacao])
         barraProgresso.update()
     with open('uagsComErro.txt', 'w') as f:
         for erro in uagsErros:
