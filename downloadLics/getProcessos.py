@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import re
 from tqdm import tqdm
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 class Registro:
     def __init__(self, noLicitacao, codUasg, nomeUasg, data):
@@ -29,9 +31,10 @@ def removeTagHtml(listaConteudo):
     return listaConteudo
 
 def getProcessos(URL, codUag):
-    options = Options()
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options = webdriver.ChromeOptions()
     options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = webdriver.Chrome(options=options)
     driver.get(URL)
     campoUasg = driver.find_element('name', 'co_uasg')
@@ -55,11 +58,10 @@ def pegaConteudoHtml(paginaHtml):
 def main():
     URL = "http://comprasnet.gov.br/livre/Pregao/ata0.asp"
     todosUags = getUags('Uags.csv')
-    
     df = pd.DataFrame(columns=['noLicitacao', 'codUasg', 'nomeUasg', 'data'])
     uagsErros = []
     barraProgresso = tqdm(total=len(todosUags))
-    for codUag in todosUags:
+    for indice, codUag in enumerate(todosUags):
         try:
             codigosLicitacao = pegaConteudoHtml(getProcessos(URL, str(codUag)))
             for licitacao in codigosLicitacao:
@@ -67,10 +69,10 @@ def main():
         except:
             uagsErros.append([codUag, licitacao.noLicitacao])
         barraProgresso.update()
-    with open('uagsComErro.txt', 'w') as f:
+        df.to_csv('processosComprasNet.csv', index=False, encoding='utf-8')
+    with open('uagsComErro.txt', 'a') as f:
         for erro in uagsErros:
             f.write(erro)
     f.close()
-    df.to_csv('processosComprasNet.csv', index=False, encoding='utf-8')
 main()
     
